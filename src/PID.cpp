@@ -18,7 +18,7 @@ void PID::Init(double Kp, double Ki, double Kd) {
 }
 
 void PID::UpdateError(double cte) {
-  twiddle(cte);
+  _UpdateError(cte);
 }
 void PID::_UpdateError(double cte) {
   _cte = cte;
@@ -28,17 +28,15 @@ void PID::_UpdateError(double cte) {
 }
 
 void PID::twiddle(double new_cte) {
-  float p[3] = { 0, 0, 0};
-  float dp[3] = { 1, 1, 1};
 
   p[0] = Kp;
   p[1] = Ki;
   p[2] = Kd;
 
-  if ((Kp + Ki + Kd) > 0.00001) {
+  if ((p[0] + p[1] + p[2]) > 0.00001) {
+    _UpdateError(new_cte);
     for (int i = 0; i < 3; i++) {
       p[i] += dp[i];
-      _UpdateError(new_cte);
       if (_cte < besterr) {
         besterr = _cte;
         p[i] *= 1.1;

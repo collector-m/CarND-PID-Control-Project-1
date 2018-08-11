@@ -25,6 +25,9 @@ public:
   double int_CTE;
 
   double besterr;
+
+  float p[3] = { 0, 0, 0};
+  float dp[3] = { 1, 1, 1};
   /*
   * Constructor
   */
