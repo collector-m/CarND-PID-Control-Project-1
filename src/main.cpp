@@ -47,9 +47,33 @@ int main()
 
   // make more sensetive to accelerations
   pid.Init(.5, .0001, 3.5);
-  pid_throttle.Init(1, 0, 0.0001);
+  // pid_throttle.Init(1.0, 0.0, 0.0001);
 
-  h.onMessage([&pid](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length, uWS::OpCode opCode) {
+  // ran off road
+  // pid_throttle.Init(.50, 0.0, 0.0001);
+
+  // Ran off a little bit less
+  // pid_throttle.Init(.50, 0.0, 0.1);
+
+  // Best so far!
+  // pid_throttle.Init(.33, 0.0, 0.02);
+
+  // If we have a fast turn at the end, let's pile up the cte
+  // to make it go slower as time goes by
+  // pid_throttle.Init(.33, -0.001, 0.02);
+
+  // Make htis negative so we slow down instead of speed up
+  // pid_throttle.Init(.33, -0.001, 0.02);
+
+  // We slow down on the long bridge to almost 0
+  // pid_throttle.Init(.33, -0.0001, 0.02);
+
+  // It didn't slow down quite enough
+  pid_throttle.Init(.33, -0.0005, 0.02);
+
+
+
+  h.onMessage([&pid, &pid_throttle](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length, uWS::OpCode opCode) {
     // "42" at the start of the message means there's a websocket message event.
     // The 4 signifies a websocket message
     // The 2 signifies a websocket event
@@ -65,7 +89,7 @@ int main()
           double speed = std::stod(j[1]["speed"].get<std::string>());
           double angle = std::stod(j[1]["steering_angle"].get<std::string>());
           double steer_value = 0.0;
-          double speed_value = 0.0;
+          double speed_value = 0.25;
 
           /*
           * TODO: Calcuate steering value here, remember the steering value is
@@ -76,8 +100,16 @@ int main()
           pid.UpdateError(cte);
           steer_value = pid.TotalError();
 
-          pid_throttle.UpdateError(cte);
-          // speed_value = pid_throttle.TotalError();
+          pid_throttle.UpdateError(fabs(cte));
+          // speed_value = 1.0 - pid_throttle.TotalError();
+
+          // 42["steer",{"steering_angle":-0.0513826800000001,"throttle":0.360802}]
+          // if we want to keep the speed down let's turn it down by subtracing more
+          // speed_value = .25 - pid_throttle.TotalError();
+
+          // we slow down so much we go negative on the last big curve, so bump
+          // up our constant here
+         speed_value = .33 - pid_throttle.TotalError();
 
           // DEBUG
           std::cout << "CTE: " << cte << " Steering Value: " << steer_value << std::endl;
